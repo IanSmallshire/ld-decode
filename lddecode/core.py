@@ -3379,6 +3379,11 @@ class LDdecode:
         self.ac3 = extra_options.get("AC3", False)
         self.write_rf_tbc = extra_options.get("write_RF_TBC", False)
 
+        self.wow = extra_options.get('wow', False)
+        self.wibble = extra_options.get('wibble', False)
+
+
+
         self.has_analog_audio = True
         if system == "PAL":
             if analog_audio == 0:
@@ -3414,6 +3419,8 @@ class LDdecode:
                 self.AC3Collector = StridedCollector(cut_begin=1024, cut_end=0)
                 self.ac3_processes, self.outfile_ac3 = ac3_pipe(fname_out + ".ac3")
                 self.do_rftbc = True
+            if self.wibble:
+                self.outfile_wibble = open(fname_out + ".wow", "wb")
 
         self.pipe_rftbc = extra_options.get("pipe_RF_TBC", None)
         if self.pipe_rftbc:
@@ -3503,6 +3510,7 @@ class LDdecode:
             "outfile_efm",
             "outfile_rftbc",
             "outfile_ac3",
+            "outfile_wibble",
         ]:
             setattr(self, outfiles, None)
 
@@ -4087,8 +4095,13 @@ class LDdecode:
                     "endx": dropout_ends,
                 }
 
+        if self.wibble:
+            self.export_wibble(f)
+
+
         # This is a bitmap, not a counter
         decodeFaults = 0
+
 
         fi["fieldPhaseID"] = f.fieldPhaseID
 
@@ -4323,3 +4336,22 @@ class LDdecode:
         jout["fields"] = self.fieldinfo.copy()
 
         return jout
+
+    def export_wibble(self, f):
+        x = f.wowfactor
+        x -= 1 # now in range from -0.001 to +0.001
+        x *= 16384000 # scale to 16 bits integer
+        x = x.astype(np.int16)
+
+        is_first = f.isFirstField
+        if self.system == 'PAL':
+            line_count = 312 if is_first else 313
+            line_offset = 3 if is_first else 4  # todo check & see comment about 0-based lines *before* downscaling
+        else:
+            line_count = 263 if is_first else 262
+            line_offset = 1 if is_first else 1  # TODO the 1s here need to be checked as not confirmed the values.
+
+        # trim the wow data to only include the current field as the RF is larger to allow detection of the syncs.
+        wow = x[line_offset:line_count + line_offset]
+
+        wow.tofile(self.outfile_wibble)

@@ -275,7 +275,16 @@ def main(args=None):
         default=False,
         help="Enable line_profiler on select functions",
     )
-
+    parser.add_argument(
+        "--save_wibble",
+        action="store_true",
+        help="Save the wibble calculated by the TBC jitter.",
+    )
+    parser.add_argument(
+        "--wow",
+        action="store_true",
+        help="Calulate the WOW caused by an off centre Laserdisc.",
+    )
 
     args = parser.parse_args(args)
     # print(args)
@@ -303,6 +312,8 @@ def main(args=None):
         "audio_filterwidth": args.audio_filterwidth,
         "AC3": args.AC3,
         "use_profiler": args.use_profiler,
+        "wibble": args.save_wibble,
+        "wow": args.wow
     }
 
     if vid_standard == "NTSC" and args.NTSC_color_notch_filter:
