@@ -4340,8 +4340,11 @@ class LDdecode:
     def export_wibble(self, f):
         x = f.wowfactor
         x -= 1 # now in range from -0.001 to +0.001
-        x *= 16384000 # scale to 16 bits integer
-        x = x.astype(np.int16)
+        #x = x.astype(np.float32)
+        # x *= 8192000 # scale to 16 bits integer
+        # x = x.astype(np.int16) # int16 clips on some discs with a scale factor of 16384000
+        x *= 1048576000 # scale to  integer
+        x = x.astype(np.int32) # try in 32 -takes up more space but less chance of clipping
 
         is_first = f.isFirstField
         if self.system == 'PAL':
